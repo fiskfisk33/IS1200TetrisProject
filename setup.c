@@ -8,11 +8,16 @@
  *
  * For copyright and licensing, see file COPYING */
 
-#include "tetris.h"
 #include <pic32mx.h>
+#include <stdint.h>
+#include "tetris.h"
+#include "mipslab.h"
 
 void displaysetup();
 
+/*
+* This function is called from stubs.c at startup
+*/
 void setup(){
 
         /*
@@ -29,6 +34,13 @@ void setup(){
 	SYSKEY = 0x0;  /* Lock OSCCON */
 
         displaysetup();
+
+	display_string(0, "Jag känner");
+	display_string(1, "en ******** spårvagnschaufför");
+	display_string(2, "I hjärtat utav göteborg.");
+	display_string(3, "Göteborg");
+	display_update();
+        display_image(96, icon2);
         
 }
 
