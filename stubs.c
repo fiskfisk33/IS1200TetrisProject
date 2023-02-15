@@ -24,7 +24,8 @@ void _on_bootstrap() {
 	setup();
 }
 
-/* This function*/
-void _isr_stub(){
-	
+/* by Jonathan Johnson
+ * calls the game loop on timer interrupt*/
+void user_isr(){
+
 }
