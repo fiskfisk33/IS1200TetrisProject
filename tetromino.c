@@ -148,7 +148,7 @@ char tetromino_block_on_index(char tetr, int dx, int dy, int rot){
         assert(rot >= 0 && rot <= 3 );
         assert(tetr >= 0 && tetr <= 7 );
         assert(dx >= 0 && dx <= 3 );
-        assert(dy >= 0 && dy <= 3); //staying safe
+        assert(dy <= 0 && dy >= -3); //staying safe
 
         const int index = tetr*64 + rot*16 + dy*4 + dx;
         return tetrominos[index];
