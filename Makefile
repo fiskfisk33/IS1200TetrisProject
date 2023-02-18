@@ -68,7 +68,7 @@ $(DEPDIR):
 
 # Compile C files
 %.c.o: %.c envcheck | $(DEPDIR)
-	$(CC) $(CFLAGS) -c -MD -o $@ $<
+	$(CC) $(CFLAGS) -std=c99 -c -MD -o $@ $<
 	@cp $*.c.d $(df).c.P; sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' -e '/^$$/ d' -e 's/$$/ :/' < $*.c.d >> $(df).c.P; $(RM) $*.c.d
 
 # Compile ASM files with C pre-processor directives
