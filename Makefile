@@ -9,7 +9,7 @@ TTYBAUD		?=115200
 PROGNAME	= outfile
 
 # Linkscript
-LINKSCRIPT	:= p$(shell echo "$(DEVICE)" | tr '[:upper:]' '[:lower:]').ld
+LINKSCRIPT	:= p$(shell echo "$(DEVICE)" | tr '[:upper:]' '[:lower:]').ld -lc
 
 # Compiler and linker flags
 CFLAGS		+= -ffreestanding -march=mips32r2 -msoft-float -Wa,-msoft-float -lc
