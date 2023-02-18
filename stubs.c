@@ -24,8 +24,12 @@ void _on_bootstrap() {
 	setup();
 }
 
+void __assert_fail() {
+	/*TODO*/
+	for(;;);
+}
 /* by Jonathan Johnson
  * calls the game loop on timer interrupt*/
 void user_isr(){
-
+        //TODO
 }
