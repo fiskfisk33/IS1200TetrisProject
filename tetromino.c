@@ -142,7 +142,7 @@ const char tetrominos[]={
                          0,0,0,0,
                         };
 
-char tetromino_block_on_index(char tetr, int dx, int dy, int rot){
+char get_tetromino_tile(char tetr, int dx, int dy, int rot){
 //tetr:
 // 0:I 1:O 2:J 3:L 4:L 5:S 6:Z 7:T
         assert(rot >= 0 && rot <= 3 );

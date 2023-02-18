@@ -5,57 +5,52 @@
 #include <string.h>
 #include <pic32mx.h>
 #include "tetris.h"
+#include "tetromino.h"
 
-uint8_t game_area[20][10];
+#define GAME_HEIGHT 22
+#define GAME_WIDTH 10
+
+uint8_t game_area[GAME_HEIGHT][GAME_WIDTH];
 int tetr_x;
 int tetr_y;
+int tetr_rot;
+char tetr_type;
+char next_tetr_type;
 /*
 
 */
 
-int blocked_down(){
-        //TODO
-        //check if tetramino is blocked downwards
+/*
+ * checks if the block fits at the given position
+ * returns 1 if blocked
+*/
+int tetr_blocked(int x, int y, int rot){
+        //TODO test
+        for(int i = 0; i <= 16; i++){
+                char block = get_tetromino_tile(tetr_type, i, -i, tetr_rot);
+                if ( block &&
+                    ( game_area[tetr_y-i][tetr_x+i] || tetr_y-i < 0 || tetr_x+i < 0 || tetr_x+i > GAME_WIDTH)) {
+                        return 1;
+                }
+        } 
+
         return 0;
 }
 
-int blocked_left(){
-        //TODO
-        //check if tetramino is blocked leftwards
-        return 0;
-}
+int row_full(uint8_t area[GAME_HEIGHT][GAME_WIDTH], int row){
+        //TODO test   
+        for(int i = 0; i <= GAME_WIDTH; i++)
+                if(!area[row][i])
+                        return 0;
+        return 1;
 
-int blocked_right(){
-        //TODO
-        //check if tetramino is blocked rightwards
-        return 0;
-}
-
-void tetromino_rotate(char direction){
-        //TODO
-        //basic NES style rotation
-        //rotation works else no rotation
-        
-        return;
-}
-
-void tetromino_drop(){
-        //TODO
-}
-
-void tetromino_move(){
-        //TODO
-}
-
-int row_full(char row){
-        //TODO        
-}
-
-void delete_row(){
-        //TODO
 }
 
 int full_rows_count(){
+        //TODO
+}
+
+void delete_row(){
         //TODO
 }
 
@@ -68,7 +63,7 @@ void init_game(){
 }
 void gameloop(){
         //TODO
-
+        //
 
         //check if blocked left
         //move left
