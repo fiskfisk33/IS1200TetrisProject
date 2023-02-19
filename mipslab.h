@@ -3,7 +3,7 @@
    This file written 2015 by F Lundevall
    Some parts are original code written by Axel Isaksson
 
-   Latest update 2015-08-28 by F Lundevall
+   Latest update 2023 by J Johnson
 
    For copyright and licensing, see file COPYING */
 
@@ -54,4 +54,10 @@ int getbtns(void);
 int getsw(void);
 void enable_interrupt(void);
 
+//below this line is code by Jonathan Johnson
 extern const uint8_t const icon2[128];
+
+
+void area_print_test();
+
+void display_playfield(int x, const uint8_t *data);

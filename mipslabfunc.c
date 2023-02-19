@@ -160,6 +160,25 @@ void display_image(int x, const uint8_t *data) {
 	}
 }
 
+void display_playfield(int x, const uint8_t *data) {
+	int i, j;
+	
+	for(i = 0; i < 4; i++) {
+		DISPLAY_CHANGE_TO_COMMAND_MODE;
+
+		spi_send_recv(0x22);
+		spi_send_recv(i);
+		
+		spi_send_recv(x & 0xF);
+		spi_send_recv(0x10 | ((x >> 4) & 0xF));
+		
+		DISPLAY_CHANGE_TO_DATA_MODE;
+		
+		for(j = 0; j < 64; j++)
+			spi_send_recv(~data[i*64 + j]);
+	}
+}
+
 void display_update(void) {
 	int i, j, k;
 	int c;
