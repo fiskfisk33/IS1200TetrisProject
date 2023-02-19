@@ -6,6 +6,9 @@
 
  * For copyright and licensing, see file COPYING */
 
+#include <stdint.h>
+#include "mipslab.h"
+#include "pic32mx.h"
 #include "tetris.h"
 
 
@@ -22,14 +25,23 @@ void _on_reset() {
 /* This function is called before main() is called, you can do setup here */
 void _on_bootstrap() {
 	setup();
+	init_game();
 }
 
-void __assert_fail() {
+void __assert_fail(char *a, char *b, unsigned int c) {
 	/*TODO*/
+	display_string(0, a);
+	display_string(1, b);
+	display_string(2, itoaconv(c));
+	//display_string(3, "stopping");
+	display_update();
 	for(;;);
 }
 /* by Jonathan Johnson
  * calls the game loop on timer interrupt*/
 void user_isr(){
-        //TODO
+	if(IFS(0) & 0x100){
+		IFSCLR(0) = 0x100;
+		gameloop();
+	}
 }

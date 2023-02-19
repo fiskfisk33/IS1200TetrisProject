@@ -8,7 +8,8 @@ void setup(void);
 void gameloop(void);
 
 
-void enable_interrupt(void);
+void enable_interrupts(void);
 
+void init_game(void);
 
 void user_isr(void);

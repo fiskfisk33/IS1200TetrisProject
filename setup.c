@@ -2,7 +2,7 @@
  *
  * This file written 2023 by Jonathan Johnson
  * code in many sections written 2015 by Axel Isaksson,
- * modified 2015, 2017 by F Lundevall
+ * and modified 2015, 2017 by F Lundevall
  *
  * For copyright and licensing, see file COPYING */
 
@@ -12,6 +12,7 @@
 #include "mipslab.h"
 
 void displaysetup();
+void timer2setup();
 
 /*
 * This function is called from stubs.c at startup
@@ -33,12 +34,17 @@ void setup(){
 
         displaysetup();
 
-	display_string(0, "Jag känner");
-	display_string(1, "en ******** spårvagnschaufför");
-	display_string(2, "I hjärtat utav göteborg.");
-	display_string(3, "Göteborg");
+	display_string(0, "Score:");
+	display_string(1, "1600000");
+	display_string(2, "       ");
+	display_string(3, "Lvl: 5");
 	display_update();
         display_image(96, icon2);
+
+	area_print_test();
+	
+	timer2setup();
+	enable_interrupts();	
         
 }
 
@@ -89,4 +95,20 @@ void displaysetup(){
 	display_update();
 	
 	//display_image(96, icon);
+}
+
+void timer2setup(){
+	//TODO
+
+	T2CON = 0x0;    //Stop the timer and clear control;
+        PR2 = 0x5208;   //period 31250
+        TMR2 = 0x0;     //clear the timer register
+        
+        IPCSET(2) = 0x0D;  //timer 2 interrupt priority 
+                         
+ 
+        IFSCLR(0) = 0x100; //timer 2 interrupt flag clear
+        IECSET(0) = 0x100; //interrupt  enable
+
+        T2CON = 0x0C070; // init/start timer 2;
 }
