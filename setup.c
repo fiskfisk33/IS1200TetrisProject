@@ -13,6 +13,7 @@
 
 void displaysetup();
 void timer2setup();
+void buttons_setup();
 
 /*
 * This function is called from stubs.c at startup
@@ -39,11 +40,12 @@ void setup(){
 	display_string(2, "       ");
 	display_string(3, "Lvl: 5");
 	display_update();
-        display_image(96, icon2);
+        //display_image(96, icon2);
 
 	area_print_test();
 	
 	timer2setup();
+	buttons_setup();
 	enable_interrupts();	
         
 }
@@ -101,7 +103,7 @@ void timer2setup(){
 	//TODO
 
 	T2CON = 0x0;    //Stop the timer and clear control;
-        PR2 = 0x5208;   //period 31250
+        PR2 = 5208;   //period 31250
         TMR2 = 0x0;     //clear the timer register
         
         IPCSET(2) = 0x0D;  //timer 2 interrupt priority 
@@ -111,4 +113,11 @@ void timer2setup(){
         IECSET(0) = 0x100; //interrupt  enable
 
         T2CON = 0x0C070; // init/start timer 2;
+}
+
+void buttons_setup(){
+	TRISDSET = 0x080;
+	TRISDSET = 0x040;
+	TRISDSET = 0x020;
+	TRISFSET = 0x2;
 }
