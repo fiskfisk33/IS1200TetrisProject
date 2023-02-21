@@ -35,10 +35,10 @@ void setup(){
 
         displaysetup();
 
-	display_string(0, "Score:");
-	display_string(1, "1600000");
+	display_string(0, "       ");
+	display_string(1, "       ");
 	display_string(2, "       ");
-	display_string(3, "Lvl: 5");
+	display_string(3, "       ");
 	display_update();
         //display_image(96, icon2);
 

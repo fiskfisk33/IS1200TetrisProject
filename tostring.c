@@ -2,14 +2,13 @@
  * C Program which Converts an Integer to String & vice-versa
  */
 #include <string.h>
-#include <math.h>
  
 void tostring(char [], int);
-int toint(char []);
  
  
 void tostring(char str[], int num)
 {
+
     int i, rem, len = 0, n;
  
     n = num;
@@ -25,4 +24,12 @@ void tostring(char str[], int num)
         str[len - (i + 1)] = rem + '0';
     }
     str[len] = '\0';
+    if(str[0] == '\0'){
+        str[0] = '0';
+        str[1] = '\0';
+    }
+}
+
+void to_string(char *c, int num){
+        
 }

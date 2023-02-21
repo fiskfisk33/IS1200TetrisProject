@@ -33,13 +33,12 @@ char das_time;
 int lines_to_lvlup;
 char landed;
 int score;
+int rows_to_level;
 /*
  * checks if the block fits at the given position
  * returns 1 if blocked
 */
 int tetr_blocked(struct Tetromino tetr){
-        //TODO test
-
         for(int iy = 0; iy < 4; iy++){
                 int y = tetr.y + iy;
                 for(int ix = 0; ix < 4; ix++){
@@ -53,31 +52,35 @@ int tetr_blocked(struct Tetromino tetr){
         return 0;
 }
 int row_full(uint8_t *area, int row){
-        //TODO test   
-        for(int i = 0; i <= GAME_WIDTH; i++)
-                if(!area[row*GAME_HEIGHT + i])
+        for(int i = 0; i < GAME_WIDTH; i++){
+                if(!area[row*GAME_WIDTH + i]){
                         return 0;
-        return 1;
-
-}
- 
-int full_rows_count(uint8_t *area){
-        //TODO test
-
-        int full_rows = 0;
-        for(int i = 0; i < GAME_HEIGHT; i++){
-                
-                full_rows++;
+                }
         }
         return 1;
 }
-
-void delete_row(uint8_t area){
-        //TODO
-
+ 
+int full_rows_count(uint8_t *area){
+        int full_rows = 0;
+        for(int i = 0; i < GAME_HEIGHT; i++){
+                full_rows += row_full(area, i);
+        }
+        return full_rows;
 }
-void delete_full_rows(uint8_t area){
 
+void delete_row(uint8_t *area, int row){
+        //TODO
+        int index = row*GAME_WIDTH;
+        memmove(area+GAME_WIDTH, area, row*GAME_WIDTH);
+        memset(area, 0, GAME_WIDTH);
+}
+
+void delete_full_rows(uint8_t *area){
+        for(int i = 0; i < GAME_HEIGHT; i++){
+                if(row_full(area, i)){
+                        delete_row(area, i);
+                }
+        }
 }
 
 /*
@@ -213,10 +216,7 @@ uint8_t *display_gametext_addline(uint8_t *img, char *c, int line, int height, c
         return img;
 
 }
-void display_gametext(char *line0, char *line1, char *line2){
-        //line1 = "123456";
-        //line2 = "123456";
-        //line3 = "123456";
+void display_gametext(char *line0, char *line1, char *line2, char *line3){
         uint8_t arr[32*4];
         uint8_t *outarr = arr;
         for(int i = 0; i < 32*4; i++)
@@ -225,14 +225,13 @@ void display_gametext(char *line0, char *line1, char *line2){
         outarr = display_gametext_addline(outarr, line0, 0, 32, tetrisfont);
         outarr = display_gametext_addline(outarr, line1, 1, 32, tetrisfont);
         outarr = display_gametext_addline(outarr, line2, 2, 32, tetrisfont);
-        //outarr = display_gametext_addline(outarr, line1, 3, 32, tetrisfont);
+        outarr = display_gametext_addline(outarr, line3, 3, 32, tetrisfont);
         //outarr = display_gametext_addline(outarr, line1, 4, 32, tetrisfont);
         //outarr = display_gametext_addline(outarr, line1, 6, 32, tetrisfont);
-
-        
         display_image(0, outarr); 
-
 }
+
+
 int frames_per_increment(int lvl){
         if (lvl < 9)
                 return 48 - level*5;
@@ -283,7 +282,6 @@ void get_tetromino_tile_test(){
 
 void init_game(){
                 //zero the game area
-        //TODO
         memset(game_area, 0, 220);
         tetr_x = 4; 
         tetr_y = 10;
@@ -293,12 +291,13 @@ void init_game(){
         tetromino.rotation = 0;
         tetromino.x = 3;
         tetromino.y = 0;
-        level = 1;
+        level = 0;
         das = 0; 
         game_over = 0;
         lines_to_lvlup = level*10;
         landed = 0;
         score = 0;
+        rows_to_level = 10;
 }
 
 struct Tetromino tetromino_translate(struct Tetromino tetr, char *btns, char *btns_changed){
@@ -407,19 +406,26 @@ void gameloop(){
                         wait += 10;
                         int fullrows = full_rows_count((uint8_t *)game_area);
                         if(fullrows > 0){
-                                //TODO add score
                                 int p = 0;
                                 if(fullrows == 1)
-                                        p = 4;
+                                        p = 40;
                                 else if(fullrows == 2)
-                                        p = 10;
+                                        p = 100;
                                 else if(fullrows == 3)
-                                        p = 30;
+                                        p = 300;
                                 else if(fullrows == 4)
-                                        p = 120;
+                                        p = 1200;
+                                
+                                assert(fullrows < 5);
                                 score += p*(level+1);
 
-                                //TODO clear lines
+                                rows_to_level -= fullrows;
+                                if(rows_to_level <= 0){
+                                        level++;
+                                        rows_to_level = 10;
+                                }
+
+                                delete_full_rows((uint8_t *)game_area);
 
                                 
                         }
@@ -433,9 +439,11 @@ void gameloop(){
         memcpy(ga, area_with_tetr((uint8_t *)game_area, tetromino), GAME_HEIGHT*GAME_WIDTH);
         print_area((uint8_t *)ga);
         char scorestring[30];
+        char levelstring[6];
         //num32asc(scorestring, score);
         tostring(scorestring, score);
-        display_gametext("SCORE ", scorestring, "      ");
+        tostring(levelstring, level);
+        display_gametext("SCORE ", scorestring, "LVL   ", levelstring);
 
         frame_counter++;
         return;
