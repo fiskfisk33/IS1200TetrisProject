@@ -160,6 +160,9 @@ void display_image(int x, const uint8_t *data) {
 	}
 }
 
+/*
+  TODO shit'n stuff
+*/
 void display_playfield(int x, const uint8_t *data) {
 	int i, j;
 	
@@ -176,6 +179,28 @@ void display_playfield(int x, const uint8_t *data) {
 		
 		for(j = 0; j < 64; j++)
 			spi_send_recv(~data[i*64 + j]);
+	}
+}
+
+/*
+  TODO more shit'n stuff
+*/
+void display_full_screen(const uint8_t *data) {
+	int i, j;
+	
+	for(i = 0; i < 4; i++) {
+		DISPLAY_CHANGE_TO_COMMAND_MODE;
+
+		spi_send_recv(0x22);
+		spi_send_recv(i);
+		
+		spi_send_recv(0x0);
+		spi_send_recv(0x10);
+		
+		DISPLAY_CHANGE_TO_DATA_MODE;
+		
+		for(j = 0; j < 128; j++)
+			spi_send_recv(data[i*128 + j]);
 	}
 }
 

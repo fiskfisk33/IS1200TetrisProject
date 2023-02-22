@@ -41,8 +41,6 @@ void setup(){
 	display_string(3, "       ");
 	display_update();
         //display_image(96, icon2);
-
-	area_print_test();
 	
 	timer2setup();
 	buttons_setup();
