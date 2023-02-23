@@ -39,16 +39,14 @@ void __assert_fail(char *a, char *b, unsigned int c) {
 	display_update();
 	for(;;);
 }
+
 /* by Jonathan Johnson
  * calls the game loop on timer interrupt*/
 void user_isr(){
-	/*if((IFS(0) & (0x1 << 31))){ //TODO i2c interrupt TODO DEPRECATED
-		IFSCLR(0) = (0x1 << 31);
-		i2c_interrupt();
-	}*/
+
 	if(IFS(0) & 0x100){      //timer 2 interrupt
 		IFSCLR(0) = 0x100;
-		//gameloop();
+		gameloop();
 	}
 
 }

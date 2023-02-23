@@ -119,6 +119,14 @@ int frames_per_increment(int lvl){
 
 void init_game(){
                 //zero the game area
+        state.hs_address[0] = 0x00;
+        state.hs_address[1] = 0xF0;
+        uint8_t read[4] = {0};
+        //i2c_write(read, 4, state.hs_address);
+        i2c_read(read, 4, state.hs_address);
+        uint32_t *hs;
+        hs = (uint32_t *) read;
+        state.high_score = *hs;
         memset(state.game_area, 0, 220);
         tetromino.piece = 0;
         tetromino.rotation = 0;
@@ -136,16 +144,29 @@ void init_game(){
 }
 
 struct Tetromino tetromino_translate(struct Tetromino tetr, char *btns, char *btns_changed){
-
 }
+
+uint32_t screen[128];
 unsigned int frame_counter = 0;
 unsigned int wait = 0;
 unsigned int rotcount = 0;
 void gameloop(){
         //TODO
 
-        if (state.game_over)
+        if (state.game_over){
+                if(state.high_score < state.score){
+                        i2c_write((uint8_t *)&state.score, 4, state.hs_address);
+                        state.score = state.high_score;
+                        render_line(screen, 15, "HIGH  ");
+                        render_line(screen, 16, " SCORE");
+                }else{
+                        
+                }
+                render_line(screen, 14, "");
+                render_line(screen, 17, "");
+                print_screen(screen);
                 return;
+        }
         if (wait > 0){
                 wait--;
                 return;
@@ -168,7 +189,11 @@ void gameloop(){
                 wait += 10;
                 if(tetr_blocked(tetromino)) //If newly spawned tetro is blocked, we've reached game over.
                         state.game_over = 1;
+                        
+                render_line(screen, 15, "GAME  ");
+                render_line(screen, 16, "  OVER");
                 //
+                return;
         }
 
         
@@ -279,24 +304,28 @@ void gameloop(){
         uint8_t ga[GAME_HEIGHT][GAME_WIDTH];
         memcpy(ga, area_with_tetr((uint8_t *)state.game_area, tetromino), GAME_HEIGHT*GAME_WIDTH);
         //print_area((uint8_t *)ga);
+        char highscorestring[30];
         char scorestring[30];
         char levelstring[6];
         //num32asc(scorestring, score);
+        tostring(highscorestring, state.high_score);
         tostring(scorestring, state.score);
         tostring(levelstring, state.level);
         //display_gametext("SCORE ", scorestring, "LVL   ", levelstring);
         //test_new_print_function((uint8_t *)ga);
 
-        uint32_t screen[128]={0};
+        //uint32_t screen[128]={0};
+        //memset(screen, 0, 128*4);
         render_game_area(screen, (uint8_t (*)[GAME_WIDTH])ga);
         
         //TODO high score
         render_line(screen, 0, "TOP");
-        render_line(screen, 1, "100");
+        render_line(screen, 1, highscorestring);
         render_line(screen, 2, "SCORE");
         render_line(screen, 3, scorestring);
         render_line(screen, 4, "LEVEL");
         render_line(screen, 5, levelstring);
+
 
         print_screen(screen);
 

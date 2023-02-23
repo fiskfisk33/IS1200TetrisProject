@@ -34,16 +34,10 @@ void setup(){
 	OSCCONCLR = 0x180000; /* clear PBDIV bit <0,1> */
 	while(OSCCON & (1 << 21));  /* Wait until PBDIV ready */
 	SYSKEY = 0x0;  /* Lock OSCCON */
+	/* end of section*/
 
+	// Call the setup functions
         displaysetup();
-
-	display_string(0, "hej");
-	display_string(1, "san  ");
-	display_string(2, "       ");
-	display_string(3, "       ");
-	display_update();
-        //display_image(96, icon2);
-	
 	timer2setup();
 	i2csetup();
 	buttons_setup();
@@ -101,12 +95,19 @@ void displaysetup(){
 	//display_image(96, icon);
 }
 
+/*
+*	Primes and enables the timer
+*	that calls the game logic every frame
+*	via an interrupt.
+*	
+*	Set to ~60hz
+*/
 void timer2setup(){
 	//TODO
 
-	T2CON = 0x0;    //Stop the timer and clear control;
-        PR2 = 5208;   //period 31250
-        TMR2 = 0x0;     //clear the timer register
+	T2CON = 0x0;  //Stop the timer and clear control;
+        PR2 = 5208;   //period
+        TMR2 = 0x0;   //clear the timer register
         uint8_t priority    = 0b010 << 2;
 	uint8_t subpriority = 0b01;
         IPCSET(2) = priority | subpriority;  //timer 2 interrupt priority 
@@ -119,6 +120,9 @@ void timer2setup(){
         T2CON = 0x0C070; // init/start timer 2;
 }
 
+/*
+* 	Set the control buttons as inputs
+*/
 void buttons_setup(){
 	TRISDSET = 0x080;
 	TRISDSET = 0x040;
@@ -126,15 +130,10 @@ void buttons_setup(){
 	TRISFSET = 0x2;
 }
 
+/*
+*	Enable I²C and set the baud rate to 100khz
+*/
 void i2csetup(){
-	// we won't do this with interrupts
-     /*   uint8_t priority    = 0b011 << 2;
-	uint8_t subpriority = 0b01;
-        IPCSET(6) = (priority | subpriority) << 8;  //timer 2 interrupt priority 
-
-	IFSCLR(0) = 0x1 << 31; // zero i2c1 master interrupt flag
-	IECSET(0) = 0x1 << 31; // enable i2c1 master interrupt */
-
         I2C1CON = (0x1 << 15);  //i2c ON
-	I2C1BRG = 0x184;
+	I2C1BRG = 0x184;	//Baud Rate 100khz
 }

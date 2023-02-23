@@ -21,6 +21,7 @@ uint32_t *render_line(uint32_t *screen, int line, char *c){
                         screen[i] |= tetrisfont[c[j]*5+i-l]<<(5*(5-j)+2);
                 }
         }
+        screen[5+l] = 0;
 }
 
 void print_screen(uint32_t *screen){

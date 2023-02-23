@@ -6,16 +6,11 @@
 #define GAME_WIDTH 10
 
 void setup(void);
-
-
-void gameloop(void);
-
-
 void enable_interrupts(void);
+void user_isr(void);
 
 void init_game(void);
-
-void user_isr(void);
+void gameloop(void);
 
 /* tostring.c */
 void tostring(char [], int);
@@ -46,14 +41,18 @@ struct Gamestate{
         char das_time;
         int lines_to_lvlup;
         char landed;
-        int score;
+        uint32_t score;
+        uint32_t high_score;
         int rows_to_level;
         uint8_t game_area[GAME_HEIGHT][GAME_WIDTH];
+	uint8_t hs_address[2];
 };
 
+
+
+/* i2c.c */
 void i2c_write(uint8_t *data, int data_length, uint8_t *address);
 void i2c_read(uint8_t *data, int data_length, uint8_t *address);
-void i2c_interrupt();
 
 
 volatile int *rw;
