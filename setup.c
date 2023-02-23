@@ -8,12 +8,14 @@
 
 #include <pic32mx.h>
 #include <stdint.h>
+#include <assert.h>
 #include "tetris.h"
 #include "mipslab.h"
 
 void displaysetup();
 void timer2setup();
 void buttons_setup();
+void i2csetup();
 
 /*
 * This function is called from stubs.c at startup
@@ -35,16 +37,18 @@ void setup(){
 
         displaysetup();
 
-	display_string(0, "       ");
-	display_string(1, "       ");
+	display_string(0, "hej");
+	display_string(1, "san  ");
 	display_string(2, "       ");
 	display_string(3, "       ");
 	display_update();
         //display_image(96, icon2);
 	
 	timer2setup();
+	i2csetup();
 	buttons_setup();
 	enable_interrupts();	
+
         
 }
 
@@ -103,8 +107,10 @@ void timer2setup(){
 	T2CON = 0x0;    //Stop the timer and clear control;
         PR2 = 5208;   //period 31250
         TMR2 = 0x0;     //clear the timer register
-        
-        IPCSET(2) = 0x0D;  //timer 2 interrupt priority 
+        uint8_t priority    = 0b010 << 2;
+	uint8_t subpriority = 0b01;
+        IPCSET(2) = priority | subpriority;  //timer 2 interrupt priority 
+	
                          
  
         IFSCLR(0) = 0x100; //timer 2 interrupt flag clear
@@ -118,4 +124,17 @@ void buttons_setup(){
 	TRISDSET = 0x040;
 	TRISDSET = 0x020;
 	TRISFSET = 0x2;
+}
+
+void i2csetup(){
+	// we won't do this with interrupts
+     /*   uint8_t priority    = 0b011 << 2;
+	uint8_t subpriority = 0b01;
+        IPCSET(6) = (priority | subpriority) << 8;  //timer 2 interrupt priority 
+
+	IFSCLR(0) = 0x1 << 31; // zero i2c1 master interrupt flag
+	IECSET(0) = 0x1 << 31; // enable i2c1 master interrupt */
+
+        I2C1CON = (0x1 << 15);  //i2c ON
+	I2C1BRG = 0x184;
 }

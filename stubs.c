@@ -12,6 +12,8 @@
 #include "tetris.h"
 
 
+#define assert(x) ((x) ? (void)0 : __assert_fail(#x, __FILE__, __LINE__))
+
 /* Non-Maskable Interrupt; something bad likely happened, so hang */
 void _nmi_handler() {
 	for(;;);
@@ -40,8 +42,13 @@ void __assert_fail(char *a, char *b, unsigned int c) {
 /* by Jonathan Johnson
  * calls the game loop on timer interrupt*/
 void user_isr(){
-	if(IFS(0) & 0x100){
+	/*if((IFS(0) & (0x1 << 31))){ //TODO i2c interrupt TODO DEPRECATED
+		IFSCLR(0) = (0x1 << 31);
+		i2c_interrupt();
+	}*/
+	if(IFS(0) & 0x100){      //timer 2 interrupt
 		IFSCLR(0) = 0x100;
-		gameloop();
+		//gameloop();
 	}
+
 }

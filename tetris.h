@@ -50,3 +50,10 @@ struct Gamestate{
         int rows_to_level;
         uint8_t game_area[GAME_HEIGHT][GAME_WIDTH];
 };
+
+void i2c_write(uint8_t *data, int data_length, uint8_t *address);
+void i2c_read(uint8_t *data, int data_length, uint8_t *address);
+void i2c_interrupt();
+
+
+volatile int *rw;
