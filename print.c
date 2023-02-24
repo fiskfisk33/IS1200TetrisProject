@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include "tetris.h"
+#include "tetromino.h"
 
 //TODO new print functions
 uint32_t *render_game_area(uint32_t *screen, uint8_t area[GAME_HEIGHT][GAME_WIDTH]){
@@ -24,6 +25,20 @@ uint32_t *render_line(uint32_t *screen, int line, char *c){
         screen[5+l] = 0;
 }
 
+uint32_t *render_next_up(uint32_t *screen, const char next_tetr_type){
+        struct Tetromino tetr;
+        tetr.piece = next_tetr_type;
+        tetr.rotation &= 0x00007FFF;
+        
+        for(int i = 49, j = 0; i < 61; i++, j++){
+                screen[i] = 0;
+                for(int k = 0; k < 4; k++){
+                        screen[i] |= (get_tetromino_tile(tetr.piece, k, j/3, 0)*(7-((!(j%3))*4))<<(28-(k*3)));
+                }
+        }
+        return screen;
+}
+
 void print_screen(uint32_t *screen){
         //TODO
         uint8_t dbuf[512] = {0};
@@ -34,4 +49,5 @@ void print_screen(uint32_t *screen){
         } 
 
         display_full_screen(dbuf);
+
 }

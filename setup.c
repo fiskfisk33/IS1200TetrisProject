@@ -84,6 +84,9 @@ void displaysetup(){
 	SPI2CONSET = 0x20;
 	/* SPI2CON bit ON = 1; */
 	SPI2CONSET = 0x8000;
+
+/* set AN5 as input for seeding srand()*/
+	TRISBSET = 0x20;
 	
 	display_init();
 	display_string(0, "KTH/ICT lab");
@@ -134,6 +137,6 @@ void buttons_setup(){
 *	Enable I²C and set the baud rate to 100khz
 */
 void i2csetup(){
-        I2C1CON = (0x1 << 15);  //i2c ON
+    I2C1CON = (0x1 << 15);  //i2c ON
 	I2C1BRG = 0x184;	//Baud Rate 100khz
 }

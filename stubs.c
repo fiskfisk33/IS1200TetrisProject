@@ -28,6 +28,7 @@ void _on_reset() {
 void _on_bootstrap() {
 	setup();
 	init_game();
+	reset_highscore();
 }
 
 void __assert_fail(char *a, char *b, unsigned int c) {

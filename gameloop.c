@@ -17,6 +17,8 @@ void *stdout; //stupid problems crave stupid solutions
 struct Gamestate state;
 struct Tetromino tetromino;
 
+uint32_t screen[128];
+
 uint8_t game_area_dyn[GAME_HEIGHT][GAME_WIDTH];
 
 /*
@@ -117,45 +119,193 @@ int frames_per_increment(int lvl){
                 return 1;
 }
 
-void init_game(){
-                //zero the game area
-        state.hs_address[0] = 0x00;
-        state.hs_address[1] = 0xF0;
-        uint8_t read[4] = {0};
-        //i2c_write(read, 4, state.hs_address);
-        i2c_read(read, 4, state.hs_address);
-        uint32_t *hs;
-        hs = (uint32_t *) read;
-        state.high_score = *hs;
-        memset(state.game_area, 0, 220);
-        tetromino.piece = 0;
-        tetromino.rotation = 0;
-        tetromino.x = 3;
-        tetromino.y = 0;
-        state.level = 0;
-        state.das = 0; 
-        state.game_over = 0;
-        state.lines_to_lvlup = state.level*10;
-        state.landed = 0;
-        state.score = 0;
-        state.rows_to_level = 10;
 
-        //srand(); //Initialize rand
+
+void tetromino_translate(struct Tetromino *tetr, const char *btns, const char *btns_changed){       
+        int new_btn_dir = btns[2] + btns[1];
+
+        //if direction changed or released, reset das
+        if (btns_changed[1] || btns_changed[2] || new_btn_dir == 0){
+                state.das = 0;
+                state.btn_dir = new_btn_dir;
+        }else if(state.das < 16){
+                state.das++;
+                state.btn_dir = 0;
+        }else if(state.das >= 16){
+                state.das = 10;
+                state.btn_dir = new_btn_dir;
+        }
+        struct Tetromino tetrominext = *tetr;
+        /* move left or right */
+        if(state.btn_dir != 0){
+                tetrominext.x += state.btn_dir;
+                if(!tetr_blocked(tetrominext)){
+                        *tetr = tetrominext;
+                }
+        }
 }
 
-struct Tetromino tetromino_translate(struct Tetromino tetr, char *btns, char *btns_changed){
+
+void tetromino_rotate(struct Tetromino *tetr, const char *btns, const char *btns_changed){  
+        if(!(btns[3] && btns_changed[3])){
+                return;
+        }
+        struct Tetromino tetrnext = *tetr;
+        tetrnext.rotation += 1;
+        tetrnext.rotation %= 4;
+        if(!tetr_blocked(tetrnext)){
+                *tetr = tetrnext;        
+        }
+}     
+
+/* Check Buttons
+ *      also saves array of changed buttons
+ */
+void get_buttons(char *btns, char *btns_changed){
+        char new_buttons[4] = {0};
+
+	new_buttons[3] = (PORTD & 0x080) > 0;
+	new_buttons[2] = -((PORTD & 0x040) > 0);
+	new_buttons[1] = (PORTD & 0x020) > 0;
+	new_buttons[0] = (PORTF & 0x2) > 0;
+        for(int i = 0; i < 4; i++){
+                btns_changed[i] = new_buttons[i] != state.buttons[i];
+                btns[i] = new_buttons[i];
+        }
 }
 
-uint32_t screen[128];
+void spawn_piece(struct Tetromino *tetr, uint8_t *wait){
+
+        tetr->y = 0;
+        tetr->x = 3;
+        tetr->rotation = 0;
+
+        //TODO add randomness
+        tetr->piece = state.next_tetr_type;
+        int rn;
+        do{     
+                state.next_tetr_type = rand() % 9;
+        }while(state.next_tetr_type > 6);            //to avoid skew in rand()
+        
+
+        *wait += 10;
+
+}
+void bottom_out(){
+        memcpy(state.game_area, area_with_tetr((uint8_t *)state.game_area, tetromino), GAME_HEIGHT*GAME_WIDTH);
+        state.landed = 1;
+        //state.wait += 10;
+        int fullrows = full_rows_count((uint8_t *)state.game_area);
+        if(fullrows > 0){
+                int p = 0;
+                if(fullrows == 1)
+                        p = 40;
+                else if(fullrows == 2)
+                        p = 100;
+                else if(fullrows == 3)
+                        p = 300;
+                else if(fullrows == 4)
+                        p = 1200;
+                
+                assert(fullrows < 5);
+                state.score += p*(state.level+1);
+                state.rows_to_level -= fullrows;
+                if(state.rows_to_level <= 0){
+                        state.level++;
+                        state.rows_to_level = 10;
+                }
+                delete_full_rows((uint8_t *)state.game_area);
+        }
+}
+
+void print_gamestate(){
+        uint8_t ga[GAME_HEIGHT][GAME_WIDTH];
+        memcpy(ga, area_with_tetr((uint8_t *)state.game_area, tetromino), GAME_HEIGHT*GAME_WIDTH);
+        char highscorestring[30];
+        char scorestring[30];
+        char levelstring[6];
+        tostring(highscorestring, state.high_score);
+        tostring(scorestring, state.score);
+        tostring(levelstring, state.level);
+
+        memset(screen, 0, 128*4);
+        render_game_area(screen, (uint8_t (*)[GAME_WIDTH])ga);
+        
+        render_line(screen, 0, "TOP");
+        render_line(screen, 1, highscorestring);
+        render_line(screen, 2, "SCORE");
+        render_line(screen, 3, scorestring);
+        render_line(screen, 4, "LEVEL");
+        render_line(screen, 5, levelstring);
+
+        render_next_up(screen, state.next_tetr_type);
+
+        print_screen(screen);
+
+}
+
 unsigned int frame_counter = 0;
-unsigned int wait = 0;
 unsigned int rotcount = 0;
+
 void gameloop(){
         //TODO
+        if (state.state == MENU){
+                frame_counter++;
+                char buttons_changed[4];
+                get_buttons(state.buttons, buttons_changed);
 
-        if (state.game_over){
+                if(state.buttons[2] && buttons_changed[2]){
+                        state.level++;
+                }else if(state.buttons[1] && buttons_changed[1] && state.level > 0){
+                        state.level--;
+                }
+                if(state.buttons[0] && buttons_changed[0]){
+                        srand((unsigned int)frame_counter);
+                        spawn_piece(&tetromino, &state.wait);
+                        state.state = PLAYING;
+                        print_gamestate();
+                        state.wait = 20;
+                        return;
+                }
+
+                memset(screen, 0, 128*4);
+                render_line(screen, 0, "WELCOM");
+                render_line(screen, 1, "  TO  ");
+                render_line(screen, 2, "TETRIS");
+                render_line(screen, 3, "      ");
+                render_line(screen, 4, "BOTTOM");
+                render_line(screen, 5, "BTN TO");
+                render_line(screen, 6, "PLAY  ");
+                render_line(screen, 7, "      ");
+                render_line(screen, 8, "      ");
+                render_line(screen, 9, "      ");
+                render_line(screen, 10, "SET   ");
+                render_line(screen, 11, "LVL   ");
+
+                char levelstring[6];
+                tostring(levelstring, state.level);
+                render_line(screen, 12, levelstring);
+                render_line(screen, 13, "      ");
+                render_line(screen, 14, "      ");
+                render_line(screen, 15, "      ");
+                render_line(screen, 16, "      ");
+                render_line(screen, 17, "      ");
+                render_line(screen, 18, "      ");
+                render_line(screen, 19, "      ");
+                render_line(screen, 20, "      ");
+                print_screen(screen);
+
+        }else if (state.state == GAME_OVER){
+
+                char buttons_changed[4];
+                get_buttons(state.buttons, buttons_changed);
+                if(state.buttons[0] && buttons_changed[0]){
+                        init_game();
+                        return;
+                }
+
                 if(state.high_score < state.score){
-                        i2c_write((uint8_t *)&state.score, 4, state.hs_address);
+                        i2c_write_eeprom((uint8_t *)&state.score, 4, state.hs_address);
                         state.score = state.high_score;
                         render_line(screen, 15, "HIGH  ");
                         render_line(screen, 16, " SCORE");
@@ -166,169 +316,93 @@ void gameloop(){
                 render_line(screen, 17, "");
                 print_screen(screen);
                 return;
-        }
-        if (wait > 0){
-                wait--;
-                return;
-        }
-        /* if landed, span a new pece */
-        if (state.landed){
-                state.landed = 0;
-                tetromino.y = 0;
-                tetromino.x = 3;
-                tetromino.rotation = 0;
-
-                //TODO add randomness
-                int rn;
-                do{     
-                        tetromino.piece = rand() % 9;
-                }while(tetromino.piece > 6);            //to avoid skew in rand()
-                
-                tetromino.piece = rand()%7;
-
-                wait += 10;
-                if(tetr_blocked(tetromino)) //If newly spawned tetro is blocked, we've reached game over.
-                        state.game_over = 1;
-                        
-                render_line(screen, 15, "GAME  ");
-                render_line(screen, 16, "  OVER");
-                //
-                return;
-        }
-
-        
-        /* Check Buttons
-                also saves array of changed buttons
-        */
-        char new_buttons[4] = {0};
-        char buttons_changed[4] = {0}; 
-	new_buttons[3] = (PORTD & 0x080) > 0;
-	new_buttons[2] = -((PORTD & 0x040) > 0);
-	new_buttons[1] = (PORTD & 0x020) > 0;
-	new_buttons[0] = (PORTF & 0x2) > 0;
-        for(int i = 0; i < 4; i++){
-                buttons_changed[i] = new_buttons[i] != state.buttons[i];
-                state.buttons[i] = new_buttons[i];
-        }
-
-
-/*      TRANSLATION (left/right)        */
-        int new_btn_dir = state.buttons[2] + state.buttons[1];
-
-        //if direction changed or released, reset das
-        if (buttons_changed[1] || buttons_changed[2] || new_btn_dir == 0){
-                state.das = 0;
-                state.btn_dir = new_btn_dir;
-        }else if(state.das < 16){
-                state.das++;
-                state.btn_dir = 0;
-        }else if(state.das >= 16){
-                state.das = 10;
-                state.btn_dir = new_btn_dir;
-        }
-        struct Tetromino tetrominext = tetromino;
-        /* move left or right */
-        if(state.btn_dir != 0){
-                tetrominext.x += state.btn_dir;
-                if(!tetr_blocked(tetrominext)){
-                        tetromino = tetrominext;
-                }else{
-                        tetrominext = tetromino;
-                }
-        }
-
-
-        /* ROTATION */
-        if(buttons_changed[3]){
-                //TODO wtf? state.btn_rot_r?!
-                state.btn_rot_r = state.buttons[3];
-        }else{
-                state.btn_rot_r = 0;
-        }
-                //TODO same here
-        if(state.btn_rot_r){
-                tetrominext.rotation += 1;
-                tetrominext.rotation %= 4;
-                if(!tetr_blocked(tetrominext)){
-                        tetromino = tetrominext;        
-                }else{
-                        tetrominext = tetromino;
-                }
-        }
-        
-        /* QuickDrop */
-        if(state.buttons[0] && (frame_counter - frames_per_increment(state.level)) > 1){
-                frame_counter = frames_per_increment(state.level)-1; //Drops tile every second frame
-        }
-        
-        /* Move down or land */
-        if(frames_per_increment(state.level) <= frame_counter){
-                frame_counter = 0;
-                //move down
-                tetrominext.y++;
-                if(!tetr_blocked(tetrominext)){
-                        tetromino = tetrominext;
-                }else{  //Hit Bottom!
-                        memcpy(state.game_area, area_with_tetr((uint8_t *)state.game_area, tetromino), GAME_HEIGHT*GAME_WIDTH);
-                        state.landed = 1;
-                        wait += 10;
-                        int fullrows = full_rows_count((uint8_t *)state.game_area);
-                        if(fullrows > 0){
-                                int p = 0;
-                                if(fullrows == 1)
-                                        p = 40;
-                                else if(fullrows == 2)
-                                        p = 100;
-                                else if(fullrows == 3)
-                                        p = 300;
-                                else if(fullrows == 4)
-                                        p = 1200;
-                                
-                                assert(fullrows < 5);
-                                state.score += p*(state.level+1);
-
-                                state.rows_to_level -= fullrows;
-                                if(state.rows_to_level <= 0){
-                                        state.level++;
-                                        state.rows_to_level = 10;
-                                }
-
-                                delete_full_rows((uint8_t *)state.game_area);
-                        }
-
+        }else if (state.state == PLAYING){
+                if (state.wait > 0){
+                        state.wait--;
                         return;
                 }
+                /* if landed, spawn a new pece */
+                if (state.landed){
+                        state.landed = 0;
+                        spawn_piece(&tetromino, &state.wait);
+
+                        if(tetr_blocked(tetromino)) //If newly spawned tetro is blocked, we've reached game over.
+                                state.state = GAME_OVER;
+                                
+                        render_line(screen, 15, "GAME  ");
+                        render_line(screen, 16, "  OVER");
+                        //
+                        return;
+                }
+
+                char buttons_changed[4] = {0}; 
+                get_buttons(state.buttons, buttons_changed);
+
+        /*      TRANSLATION and ROTATION        */
+                tetromino_translate(&tetromino, state.buttons, buttons_changed);
+                tetromino_rotate(&tetromino, state.buttons, buttons_changed);
+
+
+                /* QuickDrop */
+                if(state.buttons[0] && (frame_counter - frames_per_increment(state.level)) > 1){
+                        frame_counter = frames_per_increment(state.level)-1; //Drops tile every second frame
+                }
+                
+                /* Move down or land */
+                if(frames_per_increment(state.level) <= frame_counter){
+                        struct Tetromino tetrominext = tetromino;
+                        frame_counter = 0;
+                        //move down
+                        tetrominext.y++;
+                        if(!tetr_blocked(tetrominext)){
+                                tetromino = tetrominext;
+                        }else{  //Hit Bottom!
+                                bottom_out();
+
+                                return;
+                        }
+                }
+
+                //Print gamestate to display
+
+                print_gamestate();
+                frame_counter++;
+                return;
         }
+}
 
-        //Print gamestate to display
-        uint8_t ga[GAME_HEIGHT][GAME_WIDTH];
-        memcpy(ga, area_with_tetr((uint8_t *)state.game_area, tetromino), GAME_HEIGHT*GAME_WIDTH);
-        //print_area((uint8_t *)ga);
-        char highscorestring[30];
-        char scorestring[30];
-        char levelstring[6];
-        //num32asc(scorestring, score);
-        tostring(highscorestring, state.high_score);
-        tostring(scorestring, state.score);
-        tostring(levelstring, state.level);
-        //display_gametext("SCORE ", scorestring, "LVL   ", levelstring);
-        //test_new_print_function((uint8_t *)ga);
-
-        //uint32_t screen[128]={0};
-        //memset(screen, 0, 128*4);
-        render_game_area(screen, (uint8_t (*)[GAME_WIDTH])ga);
+void init_game(){
         
-        //TODO high score
-        render_line(screen, 0, "TOP");
-        render_line(screen, 1, highscorestring);
-        render_line(screen, 2, "SCORE");
-        render_line(screen, 3, scorestring);
-        render_line(screen, 4, "LEVEL");
-        render_line(screen, 5, levelstring);
+        srand(0xF267A8D1);
+                //zero the game area
+        state.hs_address[0] = 0x00;
+        state.hs_address[1] = 0xF0;
+        uint8_t read[4] = {0};
+        //i2c_write(read, 4, state.hs_address);
+        i2c_read_eeprom(read, 4, state.hs_address);
+        uint32_t *hs;
+        hs = (uint32_t *) read;
+        state.high_score = *hs;
+        memset(state.game_area, 0, 220);
+        spawn_piece(&tetromino, &state.wait);
+        spawn_piece(&tetromino, &state.wait);
+        state.level = 0;
+        state.das = 0; 
+        state.state = MENU;
+        state.lines_to_lvlup = state.level*10;
+        state.landed = 0;
+        state.score = 0;
+        state.rows_to_level = 10;
+        state.wait = 0;
 
-
-        print_screen(screen);
-
-        frame_counter++;
-        return;
+        //TODO better value
+}
+void reset_highscore(){
+        char buttons_changed[4];
+        get_buttons(state.buttons, buttons_changed);
+        if(state.buttons[2] && state.buttons[3]){
+                i2c_write_eeprom((uint8_t *)&state.score, 4, state.hs_address);
+                state.high_score = 0;
+        }
+        
 }
