@@ -25,7 +25,10 @@ extern const uint8_t tetrisfont[500];
 /* print.c */
 uint32_t *render_game_area(uint32_t *screen, uint8_t area[GAME_HEIGHT][GAME_WIDTH]);
 uint32_t *render_line(uint32_t *screen, int line, char *c);
+uint32_t *render_line(uint32_t *screen, int line, char *c);
+uint32_t *render_line_xy(uint32_t *screen, int x, int y, char *c);
 uint32_t *render_next_up(uint32_t *screen, const char next_tetr_type);
+uint32_t *invert_line(uint32_t *screen, int y, int count);
 void print_screen(uint32_t *screen);
 
 /* gamestate */

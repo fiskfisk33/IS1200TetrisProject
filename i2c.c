@@ -17,8 +17,8 @@
 
 /* STAT */
 #define RBF 0b010       //recieve buffer full
-#define STAT_P 0b010000 //I2C1STAT
-#define STAT_S 0b001000 //I2C1STAT
+#define STAT_P 0b010000 
+#define STAT_S 0b001000 
 #define TRSTAT 0x4000
 #define ACKSTAT 0x08000
 

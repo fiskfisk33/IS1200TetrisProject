@@ -25,6 +25,31 @@ uint32_t *render_line(uint32_t *screen, int line, char *c){
         screen[5+l] = 0;
 }
 
+uint32_t *render_line_xy(uint32_t *screen, int x, int y, char *c){
+        int l = y;
+        for(int i = 0+l; i < 5+l; i++){
+                screen[i] = 0;
+                for(int j = 0; j < 20 && c[j] != '\0'; j++){
+                        int shift = (5*(-j)+28-x);
+                        if (shift >= 32 || shift < -8){
+                                //char is outside screen bounds
+                        }else if(shift > 0){
+                                screen[i] |= tetrisfont[c[j]*5+i-l] << shift;
+                        }
+                        else{
+                                screen[i] |= tetrisfont[c[j]*5+i-l] >> (-shift);
+                        }
+                }
+        }
+        screen[5+l] = 0;
+}
+
+uint32_t *invert_line(uint32_t *screen, int y, int count){
+        for(int i = 0; i < count; i++){
+                screen[y+i] = ~screen[y+i];
+        }
+}
+
 uint32_t *render_next_up(uint32_t *screen, const char next_tetr_type){
         struct Tetromino tetr;
         tetr.piece = next_tetr_type;

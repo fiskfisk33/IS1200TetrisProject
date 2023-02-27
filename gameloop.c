@@ -256,6 +256,7 @@ void write_highscore(uint32_t score, uint8_t *name){
 unsigned int frame_counter = 0;
 unsigned int rotcount = 0;
 uint8_t initial_index;
+uint8_t menu_item;
 
 void gameloop(){
         //TODO
@@ -280,18 +281,22 @@ void gameloop(){
                 }
 
                 memset(screen, 0, 128*4);
-                render_line(screen, 0, "WELCOM");
-                render_line(screen, 1, "  TO  ");
-                render_line(screen, 2, "TETRIS");
-                render_line(screen, 4, "BOTTOM");
-                render_line(screen, 5, "BTN TO");
-                render_line(screen, 6, "PLAY  ");
-                render_line(screen, 10, "SET   ");
-                render_line(screen, 11, "LVL   ");
+                render_line_xy(screen, 32-((frame_counter/3) % (37+5*18)), 0, "WELCOME TO TETRIS");
 
+                render_line(screen, 3, "SET   ");
+                render_line(screen, 4, "LVL   ");
                 char levelstring[6];
                 tostring(levelstring, state.level);
-                render_line(screen, 12, levelstring);
+                render_line(screen, 5, levelstring);
+
+                render_line(screen, 7, "BOTTOM");
+                render_line(screen, 8, "BTN TO");
+                render_line(screen, 9, "PLAY  ");
+
+                if(menu_item == 0){
+                        invert_line(screen, 17, 19);
+                }
+
                 print_screen(screen);
 
         }else if (state.state == GAME_OVER){
