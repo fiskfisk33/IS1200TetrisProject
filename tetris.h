@@ -43,6 +43,7 @@ struct Gamestate{
         char landed;
         uint32_t score;
         uint32_t high_score;
+        char high_scorer[3];
         int rows_to_level;
         uint8_t game_area[GAME_HEIGHT][GAME_WIDTH];
 	uint8_t hs_address[2];
@@ -55,6 +56,7 @@ struct Menu{
 #define MENU 1
 #define PLAYING 2
 #define GAME_OVER 3
+#define HIGH_SCORE 4
 
 
 

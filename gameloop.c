@@ -217,13 +217,14 @@ void bottom_out(){
                 delete_full_rows((uint8_t *)state.game_area);
         }
 }
-
 void print_gamestate(){
         uint8_t ga[GAME_HEIGHT][GAME_WIDTH];
         memcpy(ga, area_with_tetr((uint8_t *)state.game_area, tetromino), GAME_HEIGHT*GAME_WIDTH);
         char highscorestring[30];
         char scorestring[30];
-        char levelstring[6];
+        char levelstring[7];
+        char highscorer[7] = "HS    ";
+        memcpy((highscorer+3), state.high_scorer, 3);
         tostring(highscorestring, state.high_score);
         tostring(scorestring, state.score);
         tostring(levelstring, state.level);
@@ -231,7 +232,7 @@ void print_gamestate(){
         memset(screen, 0, 128*4);
         render_game_area(screen, (uint8_t (*)[GAME_WIDTH])ga);
         
-        render_line(screen, 0, "TOP");
+        render_line(screen, 0, highscorer);
         render_line(screen, 1, highscorestring);
         render_line(screen, 2, "SCORE");
         render_line(screen, 3, scorestring);
@@ -244,8 +245,17 @@ void print_gamestate(){
 
 }
 
+void write_highscore(uint32_t score, uint8_t *name){
+        uint8_t memwrt[8] = "       "; /*here we make an array of chars, first four bytes will be loaded with the score, the following three with spaces, the last index is just to catch the null byte, but we will not be using that*/
+        memcpy((memwrt+4), name, 3);
+        uint32_t *tmp = (uint32_t *) memwrt;
+        *tmp = score;
+        i2c_write_eeprom(memwrt, 7, state.hs_address);
+}
+
 unsigned int frame_counter = 0;
 unsigned int rotcount = 0;
+uint8_t initial_index;
 
 void gameloop(){
         //TODO
@@ -262,6 +272,7 @@ void gameloop(){
                 if(state.buttons[0] && buttons_changed[0]){
                         srand((unsigned int)frame_counter);
                         spawn_piece(&tetromino, &state.wait);
+                        spawn_piece(&tetromino, &state.wait);
                         state.state = PLAYING;
                         print_gamestate();
                         state.wait = 20;
@@ -272,50 +283,83 @@ void gameloop(){
                 render_line(screen, 0, "WELCOM");
                 render_line(screen, 1, "  TO  ");
                 render_line(screen, 2, "TETRIS");
-                render_line(screen, 3, "      ");
                 render_line(screen, 4, "BOTTOM");
                 render_line(screen, 5, "BTN TO");
                 render_line(screen, 6, "PLAY  ");
-                render_line(screen, 7, "      ");
-                render_line(screen, 8, "      ");
-                render_line(screen, 9, "      ");
                 render_line(screen, 10, "SET   ");
                 render_line(screen, 11, "LVL   ");
 
                 char levelstring[6];
                 tostring(levelstring, state.level);
                 render_line(screen, 12, levelstring);
-                render_line(screen, 13, "      ");
-                render_line(screen, 14, "      ");
-                render_line(screen, 15, "      ");
-                render_line(screen, 16, "      ");
-                render_line(screen, 17, "      ");
-                render_line(screen, 18, "      ");
-                render_line(screen, 19, "      ");
-                render_line(screen, 20, "      ");
                 print_screen(screen);
 
         }else if (state.state == GAME_OVER){
 
                 char buttons_changed[4];
                 get_buttons(state.buttons, buttons_changed);
-                if(state.buttons[0] && buttons_changed[0]){
+                if(state.high_score < state.score){
+                        state.high_score = state.score;
+                        memset(state.high_scorer, 'A', 3); //set name to AAA
+                        state.state=HIGH_SCORE;
+                }else if(state.buttons[0] && buttons_changed[0]){
                         init_game();
                         return;
                 }
 
-                if(state.high_score < state.score){
-                        i2c_write_eeprom((uint8_t *)&state.score, 4, state.hs_address);
-                        state.score = state.high_score;
-                        render_line(screen, 15, "HIGH  ");
-                        render_line(screen, 16, " SCORE");
-                }else{
-                        
-                }
+
                 render_line(screen, 14, "");
+                render_line(screen, 15, "GAME  ");
+                render_line(screen, 16, "  OVER");
                 render_line(screen, 17, "");
                 print_screen(screen);
                 return;
+        }else if(state.state == HIGH_SCORE){
+                char buttons_changed[4];
+                get_buttons(state.buttons, buttons_changed);
+                if(state.buttons[0] && buttons_changed[0] && state.high_scorer[initial_index] > 'A'){
+                        state.high_scorer[initial_index]--;
+                }else if(state.buttons[3] && buttons_changed[3] && state.high_scorer[initial_index] < 'Z'){
+                        state.high_scorer[initial_index]++;
+                }else
+
+                if(state.buttons[1] && buttons_changed[1] && initial_index > 0){
+                        initial_index--;
+                }else if(state.buttons[2] && buttons_changed[2] && initial_index < 2){
+                        initial_index++;
+                }else if(state.buttons[2] && buttons_changed[2] && initial_index == 2){ //done
+                        write_highscore(state.high_score, state.high_scorer);
+                        state.state = MENU;
+                        init_game();
+                        return;
+                }
+
+                if(initial_index == 0){
+                        render_line(screen, 19, " ^    ");
+                }else if(initial_index == 1){
+                        render_line(screen, 19, "  ^   ");
+                }else if(initial_index == 2){
+                        render_line(screen, 19, "   ^  ");
+                }
+
+                char initial_line[7] = "      ";
+                initial_line[1] = state.high_scorer[0];
+                initial_line[2] = state.high_scorer[1];
+                initial_line[3] = state.high_scorer[2];
+
+                
+                render_line(screen, 14, "");
+                render_line(screen, 15, "HIGH  ");
+                render_line(screen, 16, " SCORE");
+                render_line(screen, 17, "");
+                render_line(screen, 18, initial_line);
+                print_screen(screen);
+
+                
+                        //i2c_write_eeprom((uint8_t *)&state.score, 4, state.hs_address);
+
+                return;
+
         }else if (state.state == PLAYING){
                 if (state.wait > 0){
                         state.wait--;
@@ -329,8 +373,7 @@ void gameloop(){
                         if(tetr_blocked(tetromino)) //If newly spawned tetro is blocked, we've reached game over.
                                 state.state = GAME_OVER;
                                 
-                        render_line(screen, 15, "GAME  ");
-                        render_line(screen, 16, "  OVER");
+
                         //
                         return;
                 }
@@ -377,12 +420,13 @@ void init_game(){
                 //zero the game area
         state.hs_address[0] = 0x00;
         state.hs_address[1] = 0xF0;
-        uint8_t read[4] = {0};
+        uint8_t read[7] = {0};
         //i2c_write(read, 4, state.hs_address);
-        i2c_read_eeprom(read, 4, state.hs_address);
+        i2c_read_eeprom(read, 7, state.hs_address);
         uint32_t *hs;
         hs = (uint32_t *) read;
         state.high_score = *hs;
+        memcpy(state.high_scorer, (read+4), 3);
         memset(state.game_area, 0, 220);
         spawn_piece(&tetromino, &state.wait);
         spawn_piece(&tetromino, &state.wait);
@@ -394,6 +438,7 @@ void init_game(){
         state.score = 0;
         state.rows_to_level = 10;
         state.wait = 0;
+        initial_index = 0;
 
         //TODO better value
 }
@@ -401,8 +446,9 @@ void reset_highscore(){
         char buttons_changed[4];
         get_buttons(state.buttons, buttons_changed);
         if(state.buttons[2] && state.buttons[3]){
-                i2c_write_eeprom((uint8_t *)&state.score, 4, state.hs_address);
+                write_highscore(0, "AAA");
+                memset(state.high_scorer, 'A', 3);
                 state.high_score = 0;
         }
-        
+
 }
