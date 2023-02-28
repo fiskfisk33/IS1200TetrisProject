@@ -41,7 +41,6 @@ void setup(){
 	timer2setup();
 	i2csetup();
 	buttons_setup();
-	enable_interrupts();	
 
         
 }

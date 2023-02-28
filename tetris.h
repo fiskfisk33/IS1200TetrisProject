@@ -53,13 +53,16 @@ struct Gamestate{
         uint8_t wait;
         uint8_t state;
 };
-struct Menu{
-
+struct High_score{
+        int high_score;
+        char initials[4]; //initialized in gameloop.c init_game();
 };
-#define MENU 1
+
+#define MENU_MAIN 1
 #define PLAYING 2
 #define GAME_OVER 3
 #define HIGH_SCORE 4
+#define MENU_HIGHSCORE 5
 
 
 

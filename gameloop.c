@@ -16,29 +16,13 @@ void *stdout; //stupid problems crave stupid solutions
 
 struct Gamestate state;
 struct Tetromino tetromino;
+struct High_score high_scores[10];
+char hs_mem[40];
 
 uint32_t screen[128];
 
 uint8_t game_area_dyn[GAME_HEIGHT][GAME_WIDTH];
 
-/*
- * checks if the block fits at the given position
- * returns 1 if blocked
-*/
-int tetr_blocked(struct Tetromino tetr){
-        for(int iy = 0; iy < 4; iy++){
-                int y = tetr.y + iy;
-                for(int ix = 0; ix < 4; ix++){
-                        int x = tetr.x + ix;
-                        uint8_t tile = get_tetromino_tile(tetr.piece, ix, iy, tetr.rotation);
-                        /* TODO dont alter gamestate this way */
-                        if (tile && (state.game_area[y][x] || y>=22 || x<0 || x>=GAME_WIDTH))
-                                return 1;
-                }
-        }
-
-        return 0;
-}
 int row_full(uint8_t *area, int row){
         for(int i = 0; i < GAME_WIDTH; i++){
                 if(!area[row*GAME_WIDTH + i]){
@@ -253,15 +237,58 @@ void write_highscore(uint32_t score, uint8_t *name){
         i2c_write_eeprom(memwrt, 7, state.hs_address);
 }
 
+/*
+        Read high scores from EEPROM and store them in th predefined global struct array */
+void read_high_scores(){
+        uint8_t memread[80]; //four bytes score, three initials and null byte
+        i2c_read_eeprom(memread, 80, state.hs_address);
+        for(int i = 0; i < 10; i++){
+                memcpy(&high_scores[i].high_score, memread+8*i, 4),
+                high_scores[i].initials[0] = memread[4+(8*i)];
+                high_scores[i].initials[1] = memread[5+(8*i)];
+                high_scores[i].initials[2] = memread[6+(8*i)];
+                high_scores[i].initials[3] = '\0';
+
+        }
+}
+//divided into two, to write more than 64bytes and over more than one page;
+void write_high_scores(){
+        uint8_t memwrite[80]; //four bytes score, three initials and null byte
+        for(int i = 0; i < 10; i++){
+                memcpy(memwrite+i*8, &high_scores[i].high_score, 4); //copy the four score bytes
+                memwrite[4+(8*i)] = high_scores[i].initials[0]; 
+                memwrite[5+(8*i)] = high_scores[i].initials[1]; 
+                memwrite[6+(8*i)] = high_scores[i].initials[2]; 
+                memwrite[7+(8*i)] = '\0';                       //not really in use, but for the sake of it.
+        }
+        uint8_t writeaddr[2];
+        writeaddr[0] = state.hs_address[0];
+        writeaddr[1] = state.hs_address[1];
+        i2c_write_eeprom(memwrite, 64, writeaddr);
+        writeaddr[1] += 64;
+        i2c_write_eeprom((memwrite+64), 16, writeaddr);
+
+}
+
+
+int sortfunc(const struct High_score *x, const struct High_score *y){
+        return y->high_score - x->high_score;
+}
+// TODO if new score is greater than lowest high score
+//      replace lowest then sort before saving
+void sort_high_scores(){
+        qsort(high_scores, 10 ,sizeof(struct High_score), (__comparefunc_t)sortfunc);
+}
+
 unsigned int frame_counter = 0;
 unsigned int rotcount = 0;
 uint8_t initial_index;
 uint8_t menu_item;
 
 void gameloop(){
+        frame_counter++;
         //TODO
-        if (state.state == MENU){
-                frame_counter++;
+        if (state.state == MENU_MAIN){
                 char buttons_changed[4];
                 get_buttons(state.buttons, buttons_changed);
 
@@ -269,8 +296,9 @@ void gameloop(){
                         state.level++;
                 }else if(state.buttons[1] && buttons_changed[1] && state.level > 0){
                         state.level--;
-                }
-                if(state.buttons[0] && buttons_changed[0]){
+                }else if(state.buttons[3] && buttons_changed[3]){
+                        state.state = MENU_HIGHSCORE;
+                }else if(state.buttons[0] && buttons_changed[0]){
                         srand((unsigned int)frame_counter);
                         spawn_piece(&tetromino, &state.wait);
                         spawn_piece(&tetromino, &state.wait);
@@ -293,8 +321,29 @@ void gameloop(){
                 render_line(screen, 8, "BTN TO");
                 render_line(screen, 9, "PLAY  ");
 
-                if(menu_item == 0){
-                        invert_line(screen, 17, 19);
+                //if(menu_item == 0){
+                //        invert_line(screen, 17, 19);
+                //}
+
+                print_screen(screen);
+
+        }else if(state.state == MENU_HIGHSCORE){
+                
+                char buttons_changed[4];
+                get_buttons(state.buttons, buttons_changed);
+
+                if(state.buttons[3] && buttons_changed[3]){
+                        state.state = MENU_MAIN;
+                }
+                memset(screen, 0, 128*4);
+                render_line_xy(screen, 32-((frame_counter/3) % (37+5*10)), 0, "HIGH SCORES");
+                for(int i = 0; i < 10; i++){
+                        char str[10];
+                        tostring(str, high_scores[i].high_score);
+                        render_line_xy(screen, 3, i*12+13, str);
+                }
+                for(int i = 0; i < 10; i++){
+                        render_line_xy(screen, 0, i*12+7, high_scores[i].initials);
                 }
 
                 print_screen(screen);
@@ -303,9 +352,9 @@ void gameloop(){
 
                 char buttons_changed[4];
                 get_buttons(state.buttons, buttons_changed);
-                if(state.high_score < state.score){
-                        state.high_score = state.score;
-                        memset(state.high_scorer, 'A', 3); //set name to AAA
+                //if score is higher than lowest high score, we have  a new high score
+                if(high_scores[9].high_score < state.score){
+                        memset(high_scores[9].initials, 'A', 3); //set name to AAA
                         state.state=HIGH_SCORE;
                 }else if(state.buttons[0] && buttons_changed[0]){
                         init_game();
@@ -322,10 +371,10 @@ void gameloop(){
         }else if(state.state == HIGH_SCORE){
                 char buttons_changed[4];
                 get_buttons(state.buttons, buttons_changed);
-                if(state.buttons[0] && buttons_changed[0] && state.high_scorer[initial_index] > 'A'){
-                        state.high_scorer[initial_index]--;
-                }else if(state.buttons[3] && buttons_changed[3] && state.high_scorer[initial_index] < 'Z'){
-                        state.high_scorer[initial_index]++;
+                if(state.buttons[0] && buttons_changed[0] && high_scores[9].initials[initial_index] > 'A'){
+                        high_scores[9].initials[initial_index]--;
+                }else if(state.buttons[3] && buttons_changed[3] && high_scores[9].initials[initial_index] < 'Z'){
+                        high_scores[9].initials[initial_index]++;
                 }else
 
                 if(state.buttons[1] && buttons_changed[1] && initial_index > 0){
@@ -333,8 +382,11 @@ void gameloop(){
                 }else if(state.buttons[2] && buttons_changed[2] && initial_index < 2){
                         initial_index++;
                 }else if(state.buttons[2] && buttons_changed[2] && initial_index == 2){ //done
-                        write_highscore(state.high_score, state.high_scorer);
-                        state.state = MENU;
+                        //write_highscore(state.high_score, state.high_scorer);
+                        //TODO WRITE NEW SCORE
+                        high_scores[9].high_score = state.score;
+                        sort_high_scores();
+                        write_high_scores();
                         init_game();
                         return;
                 }
@@ -348,20 +400,16 @@ void gameloop(){
                 }
 
                 char initial_line[7] = "      ";
-                initial_line[1] = state.high_scorer[0];
-                initial_line[2] = state.high_scorer[1];
-                initial_line[3] = state.high_scorer[2];
+                initial_line[1] = high_scores[9].initials[0];
+                initial_line[2] = high_scores[9].initials[1];
+                initial_line[3] = high_scores[9].initials[2];
 
-                
                 render_line(screen, 14, "");
                 render_line(screen, 15, "HIGH  ");
                 render_line(screen, 16, " SCORE");
                 render_line(screen, 17, "");
                 render_line(screen, 18, initial_line);
                 print_screen(screen);
-
-                
-                        //i2c_write_eeprom((uint8_t *)&state.score, 4, state.hs_address);
 
                 return;
 
@@ -391,7 +439,8 @@ void gameloop(){
                 tetromino_rotate(&tetromino, state.buttons, buttons_changed);
 
 
-                /* QuickDrop */
+                /* QuickDrop */ 
+                /* TODO quickdrop score*/
                 if(state.buttons[0] && (frame_counter - frames_per_increment(state.level)) > 1){
                         frame_counter = frames_per_increment(state.level)-1; //Drops tile every second frame
                 }
@@ -414,20 +463,27 @@ void gameloop(){
                 //Print gamestate to display
 
                 print_gamestate();
-                frame_counter++;
                 return;
         }
 }
 
 void init_game(){
+
+//TODO
+        /* we dont have access to malloc()
+           sometimes ugly problems crave ugly solutions
+           */
+        //for(int i = 10; i < 10; i++){
+        //        high_scores[i].initials = (hs_mem + i*4);
+        //}
         
         srand(0xF267A8D1);
                 //zero the game area
         state.hs_address[0] = 0x00;
-        state.hs_address[1] = 0xF0;
+        state.hs_address[1] = 0x00;
         uint8_t read[7] = {0};
         //i2c_write(read, 4, state.hs_address);
-        i2c_read_eeprom(read, 7, state.hs_address);
+        //i2c_read_eeprom(read, 7, state.hs_address);
         uint32_t *hs;
         hs = (uint32_t *) read;
         state.high_score = *hs;
@@ -437,16 +493,19 @@ void init_game(){
         spawn_piece(&tetromino, &state.wait);
         state.level = 0;
         state.das = 0; 
-        state.state = MENU;
+        state.state = MENU_MAIN;
         state.lines_to_lvlup = state.level*10;
         state.landed = 0;
         state.score = 0;
         state.rows_to_level = 10;
         state.wait = 0;
         initial_index = 0;
+        read_high_scores();
 
         //TODO better value
 }
+
+/*
 void reset_highscore(){
         char buttons_changed[4];
         get_buttons(state.buttons, buttons_changed);
@@ -456,4 +515,21 @@ void reset_highscore(){
                 state.high_score = 0;
         }
 
+}
+*/
+void reset_highscore(){
+        char buttons_changed[4];
+        get_buttons(state.buttons, buttons_changed);
+        if(state.buttons[2] && state.buttons[3]){
+                for(int i = 0; i < 10; i++){
+                        high_scores[i].high_score = 0;
+                        high_scores[i].initials[0] = 'X';
+                        high_scores[i].initials[1] = ' ';
+                        high_scores[i].initials[2] = ' ';
+                        high_scores[i].initials[3] = '\0';
+                }
+                
+                sort_high_scores();
+                write_high_scores();
+        }
 }

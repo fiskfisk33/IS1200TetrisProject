@@ -29,6 +29,8 @@ void _on_bootstrap() {
 	setup();
 	init_game();
 	reset_highscore();
+	//we do this last, to make sure our setup will stay uninterrupted.
+	enable_interrupts();	
 }
 
 void __assert_fail(char *a, char *b, unsigned int c) {
