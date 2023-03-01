@@ -1,4 +1,12 @@
+
+/* tetris_font.c
+ * This file written 2023 by Jonathan Johnson
+ */
 #include <stdint.h>
+
+/*
+*     an array to be used as a font
+*/
 const uint8_t tetrisfont[]={ 
                        0,0,0,0,0,
                        0,0,0,0,0,
@@ -85,9 +93,9 @@ const uint8_t tetrisfont[]={
                        0b00000001,      
                        0b00001110,      
 
-                       0b00000111,      
+                       0b00000110,      
                        0b00001000,      
-                       0b00001111,      
+                       0b00001110,      
                        0b00001001,      
                        0b00000110,      
                        
@@ -267,7 +275,7 @@ const uint8_t tetrisfont[]={
                        0b00000001,      
                        0b00000110,      
                        
-                       0b00001111,     //90 
+                       0b00001111,     
                        0b00000001,      
                        0b00000010,      
                        0b00000100,      
@@ -276,6 +284,6 @@ const uint8_t tetrisfont[]={
                        0,0,0,0,0,
                        0,0,0,0,0,
                        0,0,0,0,0,
-                       15,15,0,0,0,
+                       15,15,0,0,0, //special char, underline
                        
                              };

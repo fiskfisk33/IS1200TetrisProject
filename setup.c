@@ -1,6 +1,6 @@
 /* setup.c
  *
- * This file written 2023 by Jonathan Johnson
+ * This file was compiled/written 2023 by Jonathan Johnson
  * code in many sections written 2015 by Axel Isaksson,
  * and modified 2015, 2017 by F Lundevall
  *
@@ -84,7 +84,6 @@ void displaysetup(){
 	/* SPI2CON bit ON = 1; */
 	SPI2CONSET = 0x8000;
 
-/* set AN5 as input for seeding srand()*/
 	TRISBSET = 0x20;
 	
 	display_init();
@@ -94,10 +93,11 @@ void displaysetup(){
 	display_string(3, "Welcome!");
 	display_update();
 	
-	//display_image(96, icon);
+	display_image(96, icon);
 }
 
 /*
+*	by Jonathan Johnson
 *	Primes and enables the timer
 *	that calls the game logic every frame
 *	via an interrupt.
@@ -105,16 +105,12 @@ void displaysetup(){
 *	Set to ~60hz
 */
 void timer2setup(){
-	//TODO
-
 	T2CON = 0x0;  //Stop the timer and clear control;
         PR2 = 5208;   //period
         TMR2 = 0x0;   //clear the timer register
         uint8_t priority    = 0b010 << 2;
 	uint8_t subpriority = 0b01;
         IPCSET(2) = priority | subpriority;  //timer 2 interrupt priority 
-	
-                         
  
         IFSCLR(0) = 0x100; //timer 2 interrupt flag clear
         IECSET(0) = 0x100; //interrupt  enable
@@ -123,6 +119,7 @@ void timer2setup(){
 }
 
 /*
+*	by Jonathan Johnson
 * 	Set the control buttons as inputs
 */
 void buttons_setup(){

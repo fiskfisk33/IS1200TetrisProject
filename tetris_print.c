@@ -1,8 +1,34 @@
+
+/* tetris_print.c
+ * This file written 2023 by Jonathan Johnson
+ */
 #include <stdint.h>
 #include "tetris.h"
-#include "tetromino.h"
 
-//TODO new print functions
+/*
+*       converts int "num" into a cstring
+*       in "c" 
+*       !important, make sure c is large enough
+*       or this function will write to memory outside of it.
+*/
+void tostring(char *c, int num){
+	int index = 0;
+	char temp[12];
+	temp[0] = '\0';
+        do{
+		index ++;
+		temp[index] = '0' + (num % 10);
+		num /= 10;
+        }while(num != 0);
+	for(int i = 0; i <= index; i++){
+		c[i] = temp[index-i];
+	}
+}
+
+/* 
+*  Renders a representation of the game area
+*  into the screen buffer
+*/
 uint32_t *render_game_area(uint32_t *screen, uint8_t area[GAME_HEIGHT][GAME_WIDTH]){
         screen[63] = 0xFFFFFFFF;
         for(int i = 64, j=3; i < 127; i++, j++){
@@ -14,17 +40,17 @@ uint32_t *render_game_area(uint32_t *screen, uint8_t area[GAME_HEIGHT][GAME_WIDT
         screen[127] = 0xFFFFFFFF;
 }
 
+/*
+*       divides the screen into "lines" and
+*       renders a string into a given line
+*/
 uint32_t *render_line(uint32_t *screen, int line, char *c){
-        int l = line*6;
-        for(int i = 0+l; i < 5+l; i++){
-                screen[i] = 0;
-                for(int j = 0; j < 6 && c[j] != '\0'; j++){
-                        screen[i] |= tetrisfont[c[j]*5+i-l]<<(5*(5-j)+2);
-                }
-        }
-        screen[5+l] = 0;
+        render_line_xy(screen, 2, line*6, c);
 }
 
+/*
+* renders a string starting at any xy position
+*/
 uint32_t *render_line_xy(uint32_t *screen, int x, int y, char *c){
         int l = y;
         for(int i = 0+l; i < 5+l; i++){
@@ -32,11 +58,10 @@ uint32_t *render_line_xy(uint32_t *screen, int x, int y, char *c){
                 for(int j = 0; j < 20 && c[j] != '\0'; j++){
                         int shift = (5*(-j)+28-x);
                         if (shift >= 32 || shift < -8){
-                                //char is outside screen bounds
+                                //char is outside screen bounds, do nothing
                         }else if(shift > 0){
                                 screen[i] |= tetrisfont[c[j]*5+i-l] << shift;
-                        }
-                        else{
+                        }else{
                                 screen[i] |= tetrisfont[c[j]*5+i-l] >> (-shift);
                         }
                 }
@@ -44,12 +69,9 @@ uint32_t *render_line_xy(uint32_t *screen, int x, int y, char *c){
         screen[5+l] = 0;
 }
 
-uint32_t *invert_line(uint32_t *screen, int y, int count){
-        for(int i = 0; i < count; i++){
-                screen[y+i] = ~screen[y+i];
-        }
-}
-
+/*
+*       renders the up next piece into the screen buffer
+*/
 uint32_t *render_next_up(uint32_t *screen, const char next_tetr_type){
         struct Tetromino tetr;
         tetr.piece = next_tetr_type;
@@ -64,8 +86,11 @@ uint32_t *render_next_up(uint32_t *screen, const char next_tetr_type){
         return screen;
 }
 
+/*
+*       converts the screen buffer into the format
+*       the screen understands, outputs it to screen.
+*/
 void print_screen(uint32_t *screen){
-        //TODO
         uint8_t dbuf[512] = {0};
         for(int i = 0; i < 512; i++){
                 int line = i % 128;

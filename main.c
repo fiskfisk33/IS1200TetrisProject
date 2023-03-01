@@ -5,7 +5,7 @@
 /*
  * "main()" just loops and does nothing forever
  * the program is run by interrups.
- * see gameloop.h
+ * see tetris_gameloop.h
  */
 int main() {
 	while(1){

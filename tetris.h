@@ -1,20 +1,22 @@
 /* tetris.h
- * This file written 2023 by Jonathan Johnson */
+ * This file written 2023 by Jonathan Johnson
+ */
 
-//
 #define GAME_HEIGHT 22
 #define GAME_WIDTH 10
 
-void setup(void);
-void enable_interrupts(void);
-void user_isr(void);
+#include "tetris_stubs.h"
+#include "tetromino.h"
 
-void init_game(void);
-void reset_highscore(void);
-void gameloop(void);
+/* tetris_gamelogic.c*/
+void spawn_piece(struct Tetromino *tetr, uint8_t *wait);
+void tetris_playing();
 
-/* tostring.c */
-void tostring(char [], int);
+/* tetris_menu.c*/
+void menu_main();
+void menu_high_score();
+void menu_game_over();
+void menu_new_high_score();
 
 /* mipslabfunc.c*/
 void display_full_screen( const uint8_t *data);
@@ -22,56 +24,19 @@ void display_full_screen( const uint8_t *data);
 /* tetrisfont.c */
 extern const uint8_t tetrisfont[500]; 
 
-/* print.c */
+/* tetris_print.c */
 uint32_t *render_game_area(uint32_t *screen, uint8_t area[GAME_HEIGHT][GAME_WIDTH]);
 uint32_t *render_line(uint32_t *screen, int line, char *c);
 uint32_t *render_line(uint32_t *screen, int line, char *c);
 uint32_t *render_line_xy(uint32_t *screen, int x, int y, char *c);
 uint32_t *render_next_up(uint32_t *screen, const char next_tetr_type);
-uint32_t *invert_line(uint32_t *screen, int y, int count);
 void print_screen(uint32_t *screen);
-
-/* gamestate */
-
-struct Gamestate{
-        char next_tetr_type;
-        int level;
-        char game_over;
-        char buttons[4];
-        char btn_dir;
-        char btn_down;
-        char das;
-        char das_time;
-        int lines_to_lvlup;
-        char landed;
-        uint32_t score;
-        uint32_t high_score;
-        char high_scorer[3];
-        int rows_to_level;
-        uint8_t game_area[GAME_HEIGHT][GAME_WIDTH];
-	uint8_t hs_address[2];
-        uint8_t wait;
-        uint8_t state;
-};
-struct High_score{
-        int high_score;
-        char initials[4]; //initialized in gameloop.c init_game();
-};
-
-#define MENU_MAIN 1
-#define PLAYING 2
-#define GAME_OVER 3
-#define HIGH_SCORE 4
-#define MENU_HIGHSCORE 5
-
-
-
+void tostring(char *, int);
 
 /* i2c.c */
-void i2c_write_eeprom(uint8_t *data, int data_length, uint8_t *address);
-void i2c_read_eeprom(uint8_t *data, int data_length, uint8_t *address);
+void i2c_write_eeprom(uint8_t *data, uint16_t data_length, uint16_t address);
+void i2c_read_eeprom(uint8_t *data, uint16_t data_length, uint16_t address);
 
 
-volatile int *rw;
-
-//AD
+uint32_t screen[128]; //screen buffer
+unsigned int frame_counter;

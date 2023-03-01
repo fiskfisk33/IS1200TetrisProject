@@ -1,5 +1,15 @@
-#include<assert.h>
 
+/* tetromino.c
+ * This file written 2023 by Jonathan Johnson
+ */
+#include <assert.h>
+#include "tetromino.h"
+
+/*
+* array of all tetrominos and their rotation states
+* this is accessed by the rest of the program by
+* the function below.
+*/
 const char tetrominos[]={
                          0,0,0,0, //I 
                          1,1,1,1,
@@ -143,6 +153,10 @@ const char tetrominos[]={
                         };
 
 
+/*
+*  for the given tetromino type and rotation, return wether
+*  theres "air" or a "block" at the given xy index
+*/
 char get_tetromino_tile(char tetr, int dx, int dy, int rot){
 //tetr:
 // 0:I 1:O 2:J 3:L 4:L 5:S 6:Z 7:T

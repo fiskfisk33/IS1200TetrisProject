@@ -46,18 +46,13 @@ extern char textbuffer[4][16];
    Note: Since we declare these functions here,
    students must define their functions with the exact types
    specified in the laboratory instructions. */
-/* Written as part of asm lab: delay, time2string */
+
+/* below this line is code by Jonathan Johnson
+ *
+ Written as part of asm lab: delay, time2string */
 void delay(int);
 void time2string( char *, int );
 /* Written as part of i/o lab: getbtns, getsw, enable_interrupt */
 int getbtns(void);
 int getsw(void);
 void enable_interrupt(void);
-
-//below this line is code by Jonathan Johnson
-extern const uint8_t const icon2[128];
-
-
-void area_print_test();
-
-void display_playfield(int x, const uint8_t *data);

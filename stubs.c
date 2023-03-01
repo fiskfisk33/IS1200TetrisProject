@@ -9,10 +9,7 @@
 #include <stdint.h>
 #include "mipslab.h"
 #include "pic32mx.h"
-#include "tetris.h"
-
-
-#define assert(x) ((x) ? (void)0 : __assert_fail(#x, __FILE__, __LINE__))
+#include "tetris_stubs.h"
 
 /* Non-Maskable Interrupt; something bad likely happened, so hang */
 void _nmi_handler() {
@@ -25,20 +22,27 @@ void _on_reset() {
 }
 
 /* This function is called before main() is called, you can do setup here */
+/* contents added by Jonathan Johnson*/
 void _on_bootstrap() {
 	setup();
 	init_game();
 	reset_highscore();
-	//we do this last, to make sure our setup will stay uninterrupted.
+
+	/*we do this last, to make sure our setup will stay uninterrupted.*/
 	enable_interrupts();	
 }
 
+/*
+*	By Jonathan Johnson
+*	catches failed assert()'s
+*	and displays some info they're carrying
+*	NOTE: since we're using interrupts,
+*	this is not guaranteed to halt the program.
+*/
 void __assert_fail(char *a, char *b, unsigned int c) {
-	/*TODO*/
 	display_string(0, a);
 	display_string(1, b);
 	display_string(2, itoaconv(c));
-	//display_string(3, "stopping");
 	display_update();
 	for(;;);
 }
