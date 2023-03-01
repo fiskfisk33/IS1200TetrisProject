@@ -1,1 +1,4 @@
-empty
+Compiling and running:
+
+make
+make install [device name]
