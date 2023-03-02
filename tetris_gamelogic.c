@@ -121,7 +121,10 @@ uint8_t *area_with_tetr(const uint8_t *area, struct Tetromino tetr){
 
 /*
 *   "respawns" given tetramino.
-*   eg, randomizes its type, and puts it at the starting position
+*   gets the "next" tetr type and sets the given tetr to that type,
+*   and puts it in the starting position
+*  
+*   then randomizes the type of the upcoming tetr.
 */
 void spawn_piece(struct Tetromino *tetr, uint8_t *wait){
 

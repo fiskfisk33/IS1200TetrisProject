@@ -103,6 +103,9 @@ void menu_main(){
                    using whatever value it is when the player presses this button
                    should be random enough for our purposes*/
                 srand((unsigned int)frame_counter);
+                //2 since the old non random tetr was loaded into "next"
+                // we need to flush that.
+                spawn_piece(&tetromino, &state.wait);
                 spawn_piece(&tetromino, &state.wait);
                 state.state = PLAYING;
                 state.wait = 20;
