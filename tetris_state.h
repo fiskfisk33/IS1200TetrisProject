@@ -27,6 +27,7 @@ struct Gamestate{
         uint8_t state;
         uint8_t initial_index;
         uint8_t menu_item;
+        int hs_menu_y;
 };
 struct High_score{
         int high_score;

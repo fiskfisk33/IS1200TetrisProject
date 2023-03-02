@@ -6,6 +6,7 @@
 #include <pic32mx.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include "tetris.h"
 #include "tetris_state.h"
 
@@ -15,6 +16,7 @@
 /*
         Read high scores from EEPROM and store them in th predefined global struct array */
 void read_high_scores(){
+        
         uint8_t memread[80]; //four bytes score, three initials and null byte
         i2c_read_eeprom(memread, 80, state.hs_address);
         for(int i = 0; i < 10; i++){
@@ -72,6 +74,7 @@ void sort_high_scores(){
 * at startup
 */
 void reset_highscore(){
+        get_buttons(state.buttons, state.buttons_changed);
         if(state.buttons[2] && state.buttons[3]){
                 for(int i = 0; i < 10; i++){
                         high_scores[i].high_score = 0;
@@ -97,6 +100,7 @@ void menu_main(){
         }else if(state.buttons[1] && state.buttons_changed[1] && state.level > 0){
                 state.level--;
         }else if(state.buttons[3] && state.buttons_changed[3]){
+                state.hs_menu_y = 0;
                 state.state = MENU_HIGHSCORE;
         }else if(state.buttons[0] && state.buttons_changed[0]){
                 /* since frame_counter is continuously counting every frame
@@ -113,7 +117,7 @@ void menu_main(){
         }
 
         memset(screen, 0, 128*4); //clear screen buffer
-        render_line_xy(screen, 32-((frame_counter/3) % (37+5*18)), 0, "WELCOME TO TETRIS");
+        render_line_xy(screen, 32-((frame_counter/3) % (37+5*18)), 0, "WELCOME TO TETRIS", 1);
 
         render_line(screen, 3, "SET   ");
         render_line(screen, 4, "LVL   ");
@@ -133,20 +137,32 @@ void menu_main(){
         this handles the high score menu
         called every frame while in it */
 void menu_high_score(){
-
+        int line_height = 16;
+        //change y
+        if(state.buttons[2] && state.hs_menu_y <= 0){
+                state.hs_menu_y++;
+        }if(state.buttons[1] && state.hs_menu_y >= -(HS_LIST_SIZE*line_height-128+5)){
+                state.hs_menu_y--;
+        }
 
         if(state.buttons[3] && state.buttons_changed[3]){
                 state.state = MENU_MAIN;
         }
         memset(screen, 0, 128*4);
-        render_line_xy(screen, 32-((frame_counter/3) % (37+5*10)), 0, "HIGH SCORES");
+        render_line_xy(screen, 32-((frame_counter/3) % (37+5*10)), state.hs_menu_y, "HIGH SCORES", 1);
+        //render the scores
         for(int i = 0; i < 10; i++){
                 char str[10];
                 tostring(str, high_scores[i].high_score);
-                render_line_xy(screen, 3, i*12+13, str);
+                render_line_xy(screen, 3, i*line_height+13+state.hs_menu_y, str, 1);
         }
+        //render the names
         for(int i = 0; i < 10; i++){
-                render_line_xy(screen, 0, i*12+7, high_scores[i].initials);
+                int ypos = i*16+7+state.hs_menu_y;
+                char rank[3];
+                tostring(rank, i+1);
+                render_line_xy(screen, 0, ypos, rank, 1);
+                render_line_xy(screen, 15, i*line_height+7+state.hs_menu_y, high_scores[i].initials, 0);
         }
 
         print_screen(screen);

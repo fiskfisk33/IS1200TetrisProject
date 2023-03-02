@@ -146,7 +146,7 @@ void spawn_piece(struct Tetromino *tetr, uint8_t *wait){
 * to values fit for a new game
 */
 void init_game(){
-        state.hs_address = 0x0000;
+        state.hs_address = HS_MEMORY_ADDRESS;
         read_high_scores();
         memset(state.game_area, 0, 220); //zero the game area
         spawn_piece(&tetromino, &state.wait);

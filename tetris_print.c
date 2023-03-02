@@ -45,28 +45,32 @@ uint32_t *render_game_area(uint32_t *screen, uint8_t area[GAME_HEIGHT][GAME_WIDT
 *       renders a string into a given line
 */
 uint32_t *render_line(uint32_t *screen, int line, char *c){
-        render_line_xy(screen, 2, line*6, c);
+        render_line_xy(screen, 2, line*6, c, 1);
 }
 
 /*
 * renders a string starting at any xy position
 */
-uint32_t *render_line_xy(uint32_t *screen, int x, int y, char *c){
+uint32_t *render_line_xy(uint32_t *screen, int x, int y, char *c, int clear){
         int l = y;
-        for(int i = 0+l; i < 5+l; i++){
-                screen[i] = 0;
-                for(int j = 0; j < 20 && c[j] != '\0'; j++){
-                        int shift = (5*(-j)+28-x);
-                        if (shift >= 32 || shift < -8){
-                                //char is outside screen bounds, do nothing
-                        }else if(shift > 0){
-                                screen[i] |= tetrisfont[c[j]*5+i-l] << shift;
-                        }else{
-                                screen[i] |= tetrisfont[c[j]*5+i-l] >> (-shift);
+        for(int i = 0+l; i < 5+l && i < 128; i++){ 
+                if(i >= 0 && i < 128){ //make sure we are not trying to write out of bounds
+                        if(clear) screen[i] = 0;
+                        for(int j = 0; j < 20 && c[j] != '\0'; j++){
+                                int shift = (5*(-j)+28-x);
+                                if (shift >= 32 || shift < -8){
+                                        //char is outside screen bounds, do nothing
+                                }else if(shift > 0){
+                                        screen[i] |= tetrisfont[c[j]*5+i-l] << shift;
+                                }else{
+                                        screen[i] |= tetrisfont[c[j]*5+i-l] >> (-shift);
+                                }
                         }
                 }
         }
-        screen[5+l] = 0;
+        if(5+l >=0 && 5+l <128){
+                screen[5+l] = 0;
+        }
 }
 
 /*
