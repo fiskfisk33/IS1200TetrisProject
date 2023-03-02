@@ -1,1 +1,9 @@
-empty
+Compiling and running:
+this code runs on the chipKIT uno32.
+it is compiled with mcb32tools, found here:
+https://github.com/is1200-example-projects/mcb32tools/releases/
+
+with mcb32tools setup, it is as easy as plugging in the chipKIT and running:
+
+make
+make install [device name]
